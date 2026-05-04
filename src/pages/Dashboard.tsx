@@ -44,13 +44,15 @@ import {
   ChevronRight,
 } from "lucide-react";
 
-const PAGE_SIZE = 20;
+
+const PAGE_SIZE_OPTIONS = [5, 10, 20, 50];
 
 const Dashboard = () => {
   const navigate = useNavigate();
   const [tickets, setTickets] = useState<Ticket[]>([]);
   const [count, setCount] = useState(0);
   const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(PAGE_SIZE_OPTIONS[2]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [searchInput, setSearchInput] = useState("");
@@ -79,7 +81,7 @@ const Dashboard = () => {
         sortField: "created_at",
         sortOrder: "DESC",
         page,
-        pageSize: PAGE_SIZE,
+        pageSize,
       });
       setTickets(res.responseData.rows);
       setCount(res.responseData.count);
@@ -97,11 +99,11 @@ const Dashboard = () => {
     } finally {
       setLoading(false);
     }
-  }, [page, search, statusFilter, websiteFilter]);
+  }, [page, pageSize, search, statusFilter, websiteFilter]);
 
   useEffect(() => {
     load();
-  }, [load]);
+  }, [load, pageSize]);
 
   const onLogout = () => {
     auth.clear();
@@ -133,7 +135,7 @@ const Dashboard = () => {
     }
   };
 
-  const totalPages = Math.max(1, Math.ceil(count / PAGE_SIZE));
+  const totalPages = Math.max(1, Math.ceil(count / pageSize));
 
   return (
     <main className="min-h-screen bg-background">
@@ -311,7 +313,18 @@ const Dashboard = () => {
             <p className="text-sm text-muted-foreground">
               Trang {page}/{totalPages} · {count} ticket
             </p>
-            <div className="flex gap-2">
+            <div className="flex gap-2 items-center">
+              <span className="text-xs">Hiển thị:</span>
+              <Select value={String(pageSize)} onValueChange={v => { setPageSize(Number(v)); setPage(1); }}>
+                <SelectTrigger className="w-[80px] h-8">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {PAGE_SIZE_OPTIONS.map(opt => (
+                    <SelectItem key={opt} value={String(opt)}>{opt} / trang</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
               <Button
                 variant="outline"
                 size="sm"
