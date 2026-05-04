@@ -1,6 +1,6 @@
 const BASE_URL = "https://giangvien.org/ceovcci-backend/api/v1.0";
 
-export type TicketStatus = "New" | "Processing" | "Completed" | "Cancelled";
+export type TicketStatus = "OPEN" | "IN_PROGRESS" | "PENDING" | "RESOLVED" | "CLOSED";
 
 export interface Ticket {
   id: string;
@@ -10,8 +10,8 @@ export interface Ticket {
   email: string | null;
   message: string;
   status: TicketStatus;
-  created_at: string;
-  updated_at: string;
+  created_at: string | null;
+  updated_at: string | null;
   created_by: string | null;
   updated_by: string | null;
 }

@@ -55,8 +55,8 @@ const Dashboard = () => {
   const [search, setSearch] = useState("");
   const [searchInput, setSearchInput] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
-  const [websiteFilter, setWebsiteFilter] = useState("");
-  const [websiteInput, setWebsiteInput] = useState("");
+  const [websiteFilter, setWebsiteFilter] = useState<string>("all");
+  const [websiteOptions, setWebsiteOptions] = useState<string[]>([]);
   const [active, setActive] = useState<Ticket | null>(null);
   const [deleting, setDeleting] = useState<Ticket | null>(null);
   const [deletingLoad, setDeletingLoad] = useState(false);
@@ -71,7 +71,7 @@ const Dashboard = () => {
     try {
       const filters: Record<string, unknown> = {};
       if (statusFilter !== "all") filters.status = statusFilter;
-      if (websiteFilter) filters.website = websiteFilter;
+      if (websiteFilter !== "all") filters.website = websiteFilter;
       if (search) filters.full_name = { $like: `%${search}%` };
 
       const res = await ticketApi.list({
@@ -83,6 +83,11 @@ const Dashboard = () => {
       });
       setTickets(res.responseData.rows);
       setCount(res.responseData.count);
+      setWebsiteOptions((prev) => {
+        const set = new Set(prev);
+        res.responseData.rows.forEach((r) => r.website && set.add(r.website));
+        return Array.from(set).sort();
+      });
     } catch (err) {
       toast({
         title: "Không tải được dữ liệu",
@@ -107,7 +112,6 @@ const Dashboard = () => {
     e.preventDefault();
     setPage(1);
     setSearch(searchInput.trim());
-    setWebsiteFilter(websiteInput.trim());
   };
 
   const onDelete = async () => {
@@ -157,17 +161,17 @@ const Dashboard = () => {
           <StatCard label="Tổng" value={count} />
           <StatCard
             label="Mới"
-            value={tickets.filter((t) => t.status === "New").length}
+            value={tickets.filter((t) => t.status === "OPEN").length}
             tone="new"
           />
           <StatCard
             label="Đang xử lý"
-            value={tickets.filter((t) => t.status === "Processing").length}
+            value={tickets.filter((t) => t.status === "IN_PROGRESS").length}
             tone="processing"
           />
           <StatCard
-            label="Hoàn thành"
-            value={tickets.filter((t) => t.status === "Completed").length}
+            label="Đã giải quyết"
+            value={tickets.filter((t) => t.status === "RESOLVED").length}
             tone="completed"
           />
         </div>
@@ -191,15 +195,21 @@ const Dashboard = () => {
                 />
               </div>
             </div>
-            <div className="flex-1 space-y-1.5">
+            <div className="space-y-1.5 md:w-48">
               <label className="text-xs font-medium text-muted-foreground">
                 Website
               </label>
-              <Input
-                value={websiteInput}
-                onChange={(e) => setWebsiteInput(e.target.value)}
-                placeholder="zalo-mini-app"
-              />
+              <Select value={websiteFilter} onValueChange={(v) => { setWebsiteFilter(v); setPage(1); }}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Tất cả</SelectItem>
+                  {websiteOptions.map((w) => (
+                    <SelectItem key={w} value={w}>{w}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
             <div className="space-y-1.5 md:w-48">
               <label className="text-xs font-medium text-muted-foreground">
@@ -276,7 +286,7 @@ const Dashboard = () => {
                         <StatusBadge status={t.status as TicketStatus} />
                       </TableCell>
                       <TableCell className="text-xs text-muted-foreground whitespace-nowrap">
-                        {new Date(t.created_at).toLocaleString("vi-VN")}
+                        {t.created_at ? new Date(t.created_at).toLocaleString("vi-VN") : "—"}
                       </TableCell>
                       <TableCell className="text-right">
                         <Button

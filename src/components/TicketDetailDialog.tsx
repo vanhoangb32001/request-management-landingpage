@@ -30,14 +30,15 @@ interface Props {
 }
 
 const ALLOWED: Record<TicketStatus, TicketStatus[]> = {
-  New: ["New", "Processing", "Cancelled"],
-  Processing: ["Processing", "Completed", "Cancelled"],
-  Completed: ["Completed"],
-  Cancelled: ["Cancelled"],
+  OPEN: ["OPEN", "IN_PROGRESS", "PENDING", "CLOSED"],
+  IN_PROGRESS: ["IN_PROGRESS", "PENDING", "RESOLVED", "CLOSED"],
+  PENDING: ["PENDING", "IN_PROGRESS", "RESOLVED", "CLOSED"],
+  RESOLVED: ["RESOLVED", "CLOSED"],
+  CLOSED: ["CLOSED"],
 };
 
 export const TicketDetailDialog = ({ ticket, open, onClose, onUpdated }: Props) => {
-  const [status, setStatus] = useState<TicketStatus>("New");
+  const [status, setStatus] = useState<TicketStatus>("OPEN");
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
@@ -46,8 +47,8 @@ export const TicketDetailDialog = ({ ticket, open, onClose, onUpdated }: Props) 
 
   if (!ticket) return null;
 
-  const allowed = ALLOWED[ticket.status];
-  const isFinal = ticket.status === "Completed" || ticket.status === "Cancelled";
+  const allowed = ALLOWED[ticket.status] ?? [ticket.status];
+  const isFinal = ticket.status === "CLOSED";
 
   const onSave = async () => {
     if (status === ticket.status) {
@@ -90,7 +91,7 @@ export const TicketDetailDialog = ({ ticket, open, onClose, onUpdated }: Props) 
             <InfoRow
               icon={<Calendar className="w-4 h-4" />}
               label="Tạo lúc"
-              value={new Date(ticket.created_at).toLocaleString("vi-VN")}
+              value={ticket.created_at ? new Date(ticket.created_at).toLocaleString("vi-VN") : "—"}
             />
           </div>
 
